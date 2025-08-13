@@ -1,5 +1,8 @@
 # SignLink (1D-CNN + Transformer)
 
+[Link to Research Paper](OIT- Sign Link_ A 1d-cnn + Transformer Approach To Sign Language Translation.pdf)
+
+
 Sign Language Translation (video → English) using:
 - Per-frame CNN (ResNet18) → 512-d embeddings
 - Temporal 1D-CNN (downsamples time)
