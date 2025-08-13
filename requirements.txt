@@ -1,0 +1,12 @@
+torch
+torchvision
+sentencepiece
+streamlit
+sacrebleu
+decord
+opencv-python
+pyyaml
+tqdm
+numpy
+pandas
+scikit-learn

@@ -1,0 +1,6 @@
+venv/
+3ds.zip
+signlinkv2.zip
+*.pyc
+__pycache__/
+checkpoints/slt_best.pth

@@ -1,0 +1,42 @@
+model:
+  frame_cnn: resnet18
+  frame_stride: 2
+  frames: 32
+  d_model: 512
+  temporal_cnn:
+    channels: [512,512,512,512]
+    kernels:  [5,5,3,3]
+    strides:  [2,1,2,1]
+    dropout:  0.5      # Increased from 0.3
+  encoder_layers: 2
+  nhead: 8
+  use_pose: true
+decoder:
+  num_layers: 4
+  nhead: 8
+  dropout: 0.5      # Increased from 0.3
+  max_len: 64
+loss:
+  label_smoothing: 0.2  # was 0.1
+tokenizer:
+  spm_model: artifacts/spm.model
+  vocab_size: 12000
+data:
+  train_manifest: data/manifests/train.tsv
+  val_manifest:   data/manifests/val.tsv
+  fps: 25
+  img_size: 192
+  frames: 32
+  num_workers: 4
+  frame_drop_rate: 0.1 # New parameter for temporal frame drop
+train:
+  epochs: 50 # Increased from 2
+  batch_size: 8 # Increased from 2
+  lr: 3e-4
+  optimizer: adamw
+  wd: 0.05          # was 0.01
+  fp16: false
+  grad_accum_steps: 4 # Increased from 1
+inference:
+  beam: 4
+  max_len: 64
