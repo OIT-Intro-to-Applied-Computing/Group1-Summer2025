@@ -1,6 +1,6 @@
 # SignLink (1D-CNN + Transformer)
 
-[Link to Research Paper](OIT- Sign Link_ A 1d-cnn + Transformer Approach To Sign Language Translation.pdf)
+[Lab Experiment Paper](OIT- Sign Link_ A 1d-cnn + Transformer Approach To Sign Language Translation.pdf)
 
 
 Sign Language Translation (video → English) using:
