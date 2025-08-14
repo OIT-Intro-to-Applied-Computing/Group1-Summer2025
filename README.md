@@ -1,40 +1,38 @@
 # SignLink (1D-CNN + Transformer)
 
-[Lab Experiment Paper](OIT- Sign Link_ A 1d-cnn + Transformer Approach To Sign Language Translation.pdf)
+[📄 **View Lab Research Paper**](https://github.com/OIT-Intro-to-Applied-Computing/Group1-Summer2025/blob/main/OIT-%20Sign%20Link_%20A%201d-cnn%20%2B%20Transformer%20Approach%20To%20Sign%20Language%20Translation.pdf)
 
+> **Goal:** Translate sign language videos → English text using deep learning.
 
-Sign Language Translation (video → English) using:
-- Per-frame CNN (ResNet18) → 512-d embeddings
-- Temporal 1D-CNN (downsamples time)
-- Optional tiny Transformer encoder
-- Transformer decoder (seq2seq) to text (SentencePiece)
-- Pose data integration
+## Core Components
+
+* **Per-frame CNN (ResNet18)** → 512-d embeddings
+* **Temporal 1D-CNN** → downsample & model motion
+* *(Optional)* Tiny Transformer encoder
+* **Transformer decoder** (seq2seq) → text (SentencePiece)
+* **Pose data integration** for better accuracy
 
 ## Overview
 
-This project implements a sign language translation system using a 1D-CNN and Transformer architecture. It takes video and pose data as input and translates it into English text.
+SignLink is a Sign Language Translation system combining 1D-CNN temporal modeling with Transformer decoding, integrating pose landmarks for improved translation quality. It supports training, evaluation, and real-time inference via a Streamlit app.
 
 ## Key Features
 
-- **Video Encoding**: Uses a per-frame CNN (ResNet18) to extract visual features from video frames.
-- **Temporal Modeling**: Employs a temporal 1D-CNN to model the temporal dynamics of the video.
-- **Pose Integration**: Integrates pose data (2D keypoints) to enhance translation accuracy.
-- **Transformer Decoder**: Uses a Transformer decoder to generate the English translation.
-- **SentencePiece Tokenization**: Utilizes SentencePiece for subword tokenization of the output text.
-- **Streamlit Inference App**: Provides a user-friendly Streamlit application for performing inference on uploaded videos.
+* **Video Encoding:** ResNet18 frame-wise features
+* **Temporal Modeling:** 1D-CNN for sequence compression
+* **Pose Fusion:** 2D keypoints integrated with temporal features
+* **Transformer Decoder:** Attention-based translation
+* **SentencePiece Tokenization:** Subword processing
+* **Streamlit App:** Interactive inference & evaluation
 
 ## Requirements
 
-- Python 3.9+
-- PyTorch
-- SentencePiece
-- Decord (optional, but recommended for faster video loading)
-- OpenCV
-- Pandas
-- Streamlit
-- Other dependencies listed in `requirements.txt`
-
-To install the dependencies, run:
+* Python 3.9+
+* PyTorch
+* SentencePiece
+* Decord *(optional)* for faster video loading
+* OpenCV, Pandas, Streamlit
+* Other dependencies in `requirements.txt`
 
 ```bash
 pip install -r requirements.txt
@@ -42,84 +40,81 @@ pip install -r requirements.txt
 
 ## Data Preparation
 
-1.  **Download Videos**: Download the sign language videos for your dataset.
-2.  **Generate Keypoints**: Use OpenPose or a similar tool to generate 2D keypoints for each video frame. Ensure the keypoint data is stored in the correct directory structure (e.g., `datasets/training_data/<split>_2D_keypoints/openpose_output/json/<SENTENCE_NAME>/`).
-3.  **Filter CSV Files**: Use the `filter_csv.py` script to filter your CSV files based on the existence of keypoint data:
+1. **Download Videos:** Get the How2Sign dataset from the official site → [Download Dataset](https://how2sign.github.io/)
+2. **Generate Keypoints:** Use OpenPose or similar.
+3. **Filter CSV Files:**
 
-    ```bash
-    python datasets/training_data/filter_csv.py
-    ```
+```bash
+python datasets/training_data/filter_csv.py
+```
 
-4.  **Build Manifest Files**: Use the `build_manifests.py` script to generate the manifest files (train.tsv, val.tsv, test.tsv) that the data loaders will use. Provide the correct paths to your training, validation, and test CSV files, as well as the root directory for your video and pose data:
+4. **Build Manifest Files:**
 
-    ```bash
-    python scripts/build_manifests.py --train datasets/training_data/how2sign_realigned_train_filtered.csv --val datasets/training_data/how2sign_realigned_val_filtered.csv --test datasets/training_data/how2sign_realigned_test_filtered.csv --pose_root datasets/training_data --video_root datasets/training_data --outdir data/manifests
-    ```
+```bash
+python scripts/build_manifests.py \
+   --train datasets/training_data/how2sign_realigned_train_filtered.csv \
+   --val datasets/training_data/how2sign_realigned_val_filtered.csv \
+   --test datasets/training_data/how2sign_realigned_test_filtered.csv \
+   --pose_root datasets/training_data \
+   --video_root datasets/training_data \
+   --outdir data/manifests
+```
 
 ## Training
 
-1.  **Train SentencePiece Model**: Train a SentencePiece model for tokenization:
+### Train SentencePiece
 
-    ```bash
-    python -m signlink.tokenization.spm_train --input data/manifests/train.tsv --text-col SENTENCE --vocab_size 12000 --out artifacts/spm
-    ```
+```bash
+python -m signlink.tokenization.spm_train \
+    --input data/manifests/train.tsv \
+    --text-col SENTENCE \
+    --vocab_size 12000 \
+    --out artifacts/spm
+```
 
-2.  **Train the Sign2Text Model**: Use the `finetune_slt.py` script to train the model. Make sure to specify the correct configuration file:
+### Train Model
 
-    ```bash
-    python -m signlink.train.finetune_slt --config configs/slt_temporal1d_base.yaml
-    ```
-
-    The training process will log metrics (training loss, validation loss, BLEU, chrF) to a `training_log.csv` file in your project's root directory.
+```bash
+python -m signlink.train.finetune_slt \
+    --config configs/slt_temporal1d_base.yaml
+```
 
 ## Evaluation
 
-Use the `evaluate.py` script to evaluate the trained model on the validation or test set:
-
 ```bash
-python -m signlink.train.evaluate --manifest data/manifests/test.tsv --ckpt checkpoints/slt_best.pth --config configs/slt_temporal1d_base.yaml
+python -m signlink.train.evaluate \
+    --manifest data/manifests/test.tsv \
+    --ckpt checkpoints/slt_best.pth \
+    --config configs/slt_temporal1d_base.yaml
 ```
-
-This will print evaluation metrics (BLEU, chrF, prediction length statistics) to the console and save predictions to `outputs/preds.csv`.
 
 ## Inference with Streamlit App
 
-1.  **Run the Streamlit App**: Use the following command to launch the Streamlit application:
+```bash
+PYTHONPATH=$PYTHONPATH:/home/amdal/Developer/SignLink_1dcnn_transformer \
+streamlit run streamlit_app/app.py
+```
 
-    ```bash
-    PYTHONPATH=$PYTHONPATH:/home/amdal/Developer/SignLink_1dcnn_transformer streamlit run streamlit_app/app.py
-    ```
-
-2.  **Using the App**:
-    *   In the Streamlit sidebar, specify the paths to your checkpoint file (`checkpoints/slt_best.pth`), SentencePiece model (`artifacts/spm.model`), and pose data root directory (`datasets/training_data`).
-    *   In the "Demo" tab, upload a video file and enter the corresponding `SENTENCE_NAME` for the video. The app will then display the predicted translation.
-    *   In the "Evaluate" tab, upload a manifest TSV file to evaluate the model on a set of videos.
+* Provide checkpoint, SentencePiece model, and pose root path
+* Upload video + sentence name → get translation
+* Evaluate via manifest TSV upload
 
 ## Model Architecture
 
-The core model architecture is defined in `signlink/models/sign2text_model.py` and consists of:
-
--   **FrameCNN**: A per-frame CNN (ResNet18) to extract visual features.
--   **Temporal1DEncoder**: A temporal 1D-CNN to model the temporal dynamics of the video.
--   **TextDecoderTFM**: A Transformer decoder to generate the English translation.
+* **FrameCNN:** ResNet18
+* **Temporal1DEncoder:** Temporal CNN layers
+* **TextDecoderTFM:** Transformer decoder
 
 ## Configuration
 
-The training and model parameters are configured in `configs/slt_temporal1d_base.yaml`.
+Settings are in `configs/slt_temporal1d_base.yaml`.
 
 ## Data Format
-
-The training and validation data are specified in TSV files with the following schema:
 
 ```
 SENTENCE_NAME\tVIDEO_PATH\tSENTENCE\tPOSE_DIR
 ```
 
--   `SENTENCE_NAME`: A unique identifier for the video.
--   `VIDEO_PATH`: The path to the video file.
--   `SENTENCE`: The English translation of the sign language in the video.
--   `POSE_DIR`: The path to the directory containing the pose data (2D keypoints) for the video. This directory should contain JSON files, one for each frame of the video.
-
 ## Contact
 
-For questions or contributions, please contact @LordAmdal at amdal.ali@oit.edu.
+Ahmed Ali (*LordAmdal*) — [amdal.ali@oit.edu](mailto:amdal.ali@oit.edu)
